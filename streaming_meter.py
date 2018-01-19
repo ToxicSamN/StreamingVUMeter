@@ -1,39 +1,39 @@
 #!/usr/bin/python
-
-import sys
-import pygame
-import pyaudio
-import audioop
-import math
-import time
-import array
-import xml.etree.ElementTree as ET
-import requests
-import threading
-from pyradio import StationInfo, StreamPlayer
-from requests.exceptions import ConnectionError
-from pygame.locals import *
-
 """
  Streaming Meter
  Author: Sammy Shuck
  Python Compatibility: Python 3.2, 3.4, 3.5, 3.6.4
  Requirements: python-pyaudio, python-pygame, Linux OS, mplayer
- 
- This program is designed specifically for Raspberry Pi 3 Model B for a client radio station who provides their own 
+ This program is designed specifically for Raspberry Pi 3 Model B for a client radio
+ station who provides their own
  streaming services.
 """
+
+import sys
+import audioop
+import math
+import time
+import array
+import xml.etree.ElementTree as ET
+import threading
+import requests
+import pygame
+import pyaudio
+from requests.exceptions import ConnectionError
+from pyradio import StationInfo, StreamPlayer
+
 # ToDo: Add arg parser function
-# ToDo: Add a main func inside a if __main__
 # ToDo: Add logging
-# This program can utilize some argument parsers to accept cmdline input as well as pbeing able to pares a config file
+# This program can utilize some argument parsers to accept cmdline input as well as
+# being able to pares a config file
 
 # setup code
 pygame.init()
 pygame.mixer.quit()  # stops unwanted audio output on some computers
 
+
 # CLASS DEFINITIONS
-class color_picker:
+class ColorPicker:
     """ Used for pygame coloring to make it easier to pick a color by name instead of color code"""
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
@@ -51,7 +51,9 @@ class color_picker:
 class Window:
     """ Main window class """
 
-    def __init__(self, window_width, window_height, window_frame=pygame.NOFRAME, window_caption="VU Meter", bg_color=(0,0,0), font=pygame.font.Font('freesansbold.ttf', 12)):
+    def __init__(self, window_width, window_height, window_frame=pygame.NOFRAME,
+                 window_caption="VU Meter", bg_color=(0, 0, 0),
+                 font=pygame.font.Font('freesansbold.ttf', 12)):
         self.width = window_width
         self.height = window_height
         self.caption = window_caption
@@ -62,17 +64,22 @@ class Window:
         pygame.display.set_caption(window_caption)
         self.screen.fill(self.bg_color)
 
-    def update(self):
+    @staticmethod
+    def update():
+        """
+            update the pygame window
+            :return: None
+        """
         pygame.display.update()
 
 
 class dbWindow:
     """ dB Window class for displaying the dB levels on the VU meter"""
 
-    def __init__(self, window_width, window_height, window_frame=pygame.NOFRAME, window_caption="VU Meter", bg_color=(0,0,0), font=pygame.font.Font('freesansbold.ttf', 12)):
+    def __init__(self, window_width, window_height, bg_color=(0, 0, 0),
+                 font=pygame.font.Font('freesansbold.ttf', 12)):
         self.width = window_width
         self.height = window_height
-        self.caption = window_caption
         self.bg_color = bg_color
         self.font = font
         self.surf = pygame.Surface((self.width, self.height))
@@ -80,9 +87,15 @@ class dbWindow:
         self.metering = {'green': 30,  # -10
                          'yellow': 36,  # -4
                          'red': 39,  # -1
-                         }
+                        }
 
-    def draw(self, LevelL=0, LevelR=0, PeakL=0, PeakR=0):
+    def draw(self, LevelL=0, LevelR=0):
+        """
+        Draw the db meter
+        :param LevelL: Left channel Level
+        :param LevelR: Right Channel Level
+        :return: Nothing
+        """
         self.surf.fill(self.bg_color)
 
         # Write the scale and draw in the lines
@@ -99,7 +112,7 @@ class dbWindow:
             # draw the numbers
             str_number = str(dB)
             text = self.font.render(str_number, 1, (255, 255, 255))
-            textpos = text.get_rect()
+            text.get_rect()
             self.surf.blit(text, (xpos, 40))
 
             # draw the lines before and after the numbers
@@ -118,33 +131,42 @@ class dbWindow:
         for i in range(0, LevelL):
             xpos = (i * 12)-1
             if i < self.metering['green']:
-                pygame.draw.rect(self.surf, color_picker.GREEN, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.GREEN, (xpos, ypos, 30, 12))
             elif self.metering['green'] <= i < self.metering['yellow']:
-                pygame.draw.rect(self.surf, color_picker.YELLOW, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.YELLOW, (xpos, ypos, 30, 12))
             elif self.metering['yellow'] <= i < self.metering['red']:
-                pygame.draw.rect(self.surf, color_picker.RED, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.RED, (xpos, ypos, 30, 12))
             else:
-                pygame.draw.rect(self.surf, color_picker.WHITE, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.WHITE, (xpos, ypos, 30, 12))
 
         # RIGHT CHANNEL
         ypos = 69
         for i in range(0, LevelR):
             xpos = (i * 12)-1
             if i < self.metering['green']:
-                pygame.draw.rect(self.surf, color_picker.GREEN, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.GREEN, (xpos, ypos, 30, 12))
             elif self.metering['green'] <= i < self.metering['yellow']:
-                pygame.draw.rect(self.surf, color_picker.YELLOW, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.YELLOW, (xpos, ypos, 30, 12))
             elif self.metering['yellow'] <= i < self.metering['red']:
-                pygame.draw.rect(self.surf, color_picker.RED, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.RED, (xpos, ypos, 30, 12))
             else:
-                pygame.draw.rect(self.surf, color_picker.WHITE, (xpos, ypos, 30, 12))
+                pygame.draw.rect(self.surf, ColorPicker.WHITE, (xpos, ypos, 30, 12))
 
         mainWindow.screen.blit(self.surf, (0, 0))
 
-    def threaded_draw(self, LevelL=0, LevelR=0, PeakL=0, PeakR=0):
+    def threaded_draw(self, LevelL=0, LevelR=0):
+        """
+        Draw the window in a separate thread so that the main window is not being locked up
+        :param LevelL: Left channel level
+        :param LevelR: Right channel level
+        :return:
+        """
         if not self.updating:
             self.updating = True
-            t = threading.Thread(target=self.draw(Level=LevelL, LevelR=LevelR, PeakL=PeakL, PeakR=PeakR))
+            t = threading.Thread(target=self.draw(LevelL=LevelL,
+                                                  LevelR=LevelR
+                                                 )
+                                )
             t.start()
 
 
@@ -163,43 +185,53 @@ class StatsWindow:
         self.updating = False
 
     def draw(self, ics):
-
+        """
+        draw the streaming stats window
+        :param ics: IcecastServer class
+        :return: Nothing
+        """
         self.surf_copy = self.surf.copy()
 
-        if len(ics.Mounts) == 0:
+        if not ics.Mounts:
             # no mount points so lets create a NULL mount point
             ics.Mounts.append(NullMountpoint())
 
         # define text surfaces
-        self.title_surf = self.font.render("{}".format(ics.Mounts[0].ServerDescription),
-                                      True,
-                                      color_picker.WHITE,
-                                      BGCOLOR)
-
-        self.serverStart_surf = self.font.render("Server Start:  {}".format(ics.server_start),
+        self.title_surf = self.font.render("{}".format(
+            ics.Mounts[0].ServerDescription),
                                            True,
-                                           color_picker.WHITE,
+                                           ColorPicker.WHITE,
                                            BGCOLOR)
 
-        self.streamStart_surf = self.font.render("Stream Service Start:  {}".format(ics.Mounts[0].StreamStart),
-                                           True,
-                                           color_picker.WHITE,
-                                           BGCOLOR)
+        self.serverStart_surf = self.font.render("Server Start:  {}".format(
+            ics.server_start),
+                                                 True,
+                                                 ColorPicker.WHITE,
+                                                 BGCOLOR)
 
-        self.currentListener_surf = self.font.render("Current Listeners:  {}".format(ics.listeners),
-                                           True,
-                                           color_picker.WHITE,
-                                           BGCOLOR)
+        self.streamStart_surf = self.font.render("Stream Service Start:  {}".format(
+            ics.Mounts[0].StreamStart),
+                                                 True,
+                                                 ColorPicker.WHITE,
+                                                 BGCOLOR)
 
-        self.peakListener_surf = self.font.render("Peak Listeners:  {}".format(ics.Mounts[0].ListenerPeak),
-                                           True,
-                                           color_picker.WHITE,
-                                           BGCOLOR)
+        self.currentListener_surf = self.font.render("Current Listeners:  {}".format(
+            ics.listeners),
+                                                     True,
+                                                     ColorPicker.WHITE,
+                                                     BGCOLOR)
 
-        self.slowListener_surf = self.font.render("Slow Listeners:  {}".format(ics.Mounts[0].SlowListeners),
-                                           True,
-                                           color_picker.WHITE,
-                                           BGCOLOR)
+        self.peakListener_surf = self.font.render("Peak Listeners:  {}".format(
+            ics.Mounts[0].ListenerPeak),
+                                                  True,
+                                                  ColorPicker.WHITE,
+                                                  BGCOLOR)
+
+        self.slowListener_surf = self.font.render("Slow Listeners:  {}".format(
+            ics.Mounts[0].SlowListeners),
+                                                  True,
+                                                  ColorPicker.WHITE,
+                                                  BGCOLOR)
 
         # define text locations and blit
         self._text_display_queue(self.title_surf, xpos=0, ypos=0)
@@ -214,12 +246,24 @@ class StatsWindow:
         self.updating = False
 
     def threaded_draw(self, ics):
+        """
+        Draw the window ina separate thread to prevent locking up the window during the redraw
+        :param ics: IcecastServer class
+        :return:
+        """
         if not self.updating:
             self.updating = True
             t = threading.Thread(target=self.draw(ics))
             t.start()
 
     def _text_display_queue(self, _surface, xpos, ypos):
+        """
+        Draw the text surfaces
+        :param _surface: text rect
+        :param xpos:
+        :param ypos:
+        :return: None
+        """
         _rect = _surface.get_rect(x=xpos, y=ypos)
         self.surf_copy.blit(_surface, _rect)
 
@@ -230,7 +274,8 @@ class VUMeter:
     pa = pyaudio.PyAudio()
     sound_device_index = 0
 
-    def __init__(self, sample_rate=44100, channels=2, input_channel=1, buffer_size=1024, record_seconds=0.1, input_stream=True):
+    def __init__(self, sample_rate=44100, channels=2, input_channel=1,
+                 buffer_size=1024, record_seconds=0.1, input_stream=True):
 
         for index in range(0, self.pa.get_device_count()):
             sound_device = self.pa.get_device_info_by_index(index)
@@ -295,7 +340,8 @@ class VUMeter:
 
 
 class NullMountpoint:
-    """ This is a basic class to provide null values in the event the Icecast mount points are not available"""
+    """ This is a basic class to provide null values in the event the Icecast mount points
+    are not available"""
 
     def __init__(self):
         self.ServerDescription = "No description available"
@@ -309,7 +355,8 @@ class IcecastError(Exception):
 
 
 class IcecastInfo:
-    """ IcecastInfo uses requests.get to obtan information from the Icecast admin page and child mountpoints """
+    """ IcecastInfo uses requests.get to obtan information from the Icecast admin page and
+    child mountpoints """
 
     def __init__(self, name, hostname, port, username, password):
         self.request = requests.Session()
@@ -341,7 +388,8 @@ class IcecastInfo:
             self.IceStats = ET.fromstring(req.text)
         except:
             raise IcecastError("Error parsing xml.")
-        # need to null out the Mounts attribute so that we don't keep growing the list and run the system out of memory
+        # need to null out the Mounts attribute so that we don't keep growing the list and
+        # run the system out of memory
         self.Mounts = []
         self.listeners = self.IceStats.find('listeners').text
         self.server_start = self.IceStats.find('server_start').text
@@ -415,82 +463,94 @@ class IcecastListener:
         self.IceStats = listener
 
 
+def main():
+    # create the main VUMeter object to be used
+    vu_meter = VUMeter(sample_rate=44100,
+                       channels=1,
+                       buffer_size=4096,
+                       record_seconds=0.2,
+                       input_stream=True)
+    vu_meter.open_stream()  # Open the stream to start reading from it
+
+    # Define the icecast arguments to be passed to the IcecastInfo class
+    # ToDo: read these values from a config file on the system instead of hardcoded
+    icecast_args = ("localhost", "127.0.0.1", "8000", "admin", "[redacted]")
+    icecast_serv = IcecastInfo(*icecast_args)
+
+    # create the various windows
+    fontSmall = pygame.font.Font('freesansbold.ttf', 12)
+    mainWindow = Window(WINDOWWIDTH, WINDOWHEIGHT, pygame.NOFRAME,
+                        font=fontSmall,
+                        bg_color=ColorPicker.BLACK)
+    db_Window = dbWindow(WINDOWWIDTH, 200, pygame.NOFRAME,
+                         font=fontSmall,
+                         bg_color=ColorPicker.BLACK)
+    stats_Window = StatsWindow(name="Stats",
+                               xpos=5,
+                               ypos=100,
+                               window_width=WINDOWWIDTH-5,
+                               window_height=240)
+
+    # ToDo: read these values from a config file on the system instead of hardcoded
+    station_kwargs = {'name': 'KGRO Broadcast',
+                      'uri': 'http://localhost:8000/kgro'
+                     }
+    # ToDo: read these values from a config file on the system instead of hardcoded
+    mplayer_kwargs = {'cache': 320,
+                      'optional_args': ['-ao', 'alsa']
+                     }
+    station = StationInfo(**station_kwargs)
+    mplayer = StreamPlayer(station)
+    mplayer.play(**mplayer_kwargs)
+
+    while True:  # main application loop
+
+        # Read the data and calcualte the left and right levels
+        try:
+            try:
+                icecast_serv.refresh()
+                if not mplayer.is_playing():
+                    mplayer.play(**mplayer_kwargs)
+            except:
+                continue
+
+            vu_meter.read_stream()
+
+            # event handling loop for quit events
+            for event in pygame.event.get():
+                if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                    pygame.quit()
+                    sys.exit()
+
+            db_Window.draw(LevelL=vu_meter.level_left,
+                           LevelR=vu_meter.level_right
+                          )
+            stats_Window.threaded_draw(icecast_serv)
+            mainWindow.update()
+
+        except BaseException as e:
+            print(e)
+            if isinstance(e, SystemExit):
+                mplayer.stop()
+                break
+            # on occasion pyaudio will receieve an input overrun and this requires a new
+            # pyaudio.PyAudio() object created
+            time.sleep(0.1)
+            vu_meter = VUMeter(sample_rate=44100,
+                               channels=1,
+                               buffer_size=4096,
+                               record_seconds=0.2,
+                               input_stream=True)
+            vu_meter.open_stream()
+
+    # one final stop command to ensure all mplayer processes have been cleaned up
+    mplayer.stop()
+
+
 # GLOBAL CONSTANTS
 WINDOWWIDTH = 480
 WINDOWHEIGHT = 280
-BGCOLOR = color_picker.BLACK
-flow = False  # controls type of color flow
+BGCOLOR = ColorPicker.BLACK
 
-# create the main VUMeter object to be used
-vu_meter = VUMeter(sample_rate=44100,
-                   channels=1,
-                   buffer_size=4096,
-                   record_seconds=0.2,
-                   input_stream=True)
-vu_meter.open_stream()  # Open the stream to start reading from it
-
-# Define the icecast arguments to be passed to the IcecastInfo class
-# ToDo: read these values from a config file on the system instead of hardcoded
-icecast_args = ("localhost", "127.0.0.1", "8000", "admin", "[redacted]")
-icecast_serv = IcecastInfo(*icecast_args)
-
-# create the various windows
-fontSmall = pygame.font.Font('freesansbold.ttf', 12)
-mainWindow = Window(WINDOWWIDTH, WINDOWHEIGHT, pygame.NOFRAME, font=fontSmall, bg_color=color_picker.BLACK)
-db_Window = dbWindow(WINDOWWIDTH, 200, pygame.NOFRAME, font=fontSmall, bg_color=color_picker.BLACK)
-stats_Window = StatsWindow(name="Stats", xpos=5, ypos=100, window_width=WINDOWWIDTH-5, window_height=240)
-
-# ToDo: read these values from a config file on the system instead of hardcoded
-station_kwargs = {'name': 'KGRO Broadcast',
-                  'uri': 'http://localhost:8000/kgro'
-                  }
-# ToDo: read these values from a config file on the system instead of hardcoded
-mplayer_kwargs = {'cache': 320,
-                  'optional_args': ['-ao', 'alsa']
-                  }
-station = StationInfo(**station_kwargs)
-mplayer = StreamPlayer(station)
-mplayer.play(**mplayer_kwargs)
-
-while True:  # main application loop
-
-    # Read the data and calcualte the left and right levels
-    try:
-        try:
-            icecast_serv.refresh()
-            if not mplayer.is_playing():
-                mplayer.play(**mplayer_kwargs)
-        except:
-            continue
-
-        vu_meter.read_stream()
-
-        # event handling loop for quit events
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
-                pygame.quit()
-                sys.exit()
-
-        db_Window.draw(LevelL=vu_meter.level_left,
-                       LevelR=vu_meter.level_right,
-                       PeakL=vu_meter.peak_left,
-                       PeakR=vu_meter.peak_right)
-        stats_Window.threaded_draw(icecast_serv)
-        mainWindow.update()
-
-    except BaseException as e:
-        print(e)
-        if isinstance(e, SystemExit):
-            mplayer.stop()
-            break
-        # on occasion pyaudio will receieve an input overrun and this requires a new pyaudio.PyAudio() object created
-        time.sleep(0.1)
-        vu_meter = VUMeter(sample_rate=44100,
-                           channels=1,
-                           buffer_size=4096,
-                           record_seconds=0.2,
-                           input_stream=True)
-        vu_meter.open_stream()
-
-# one final stop command to ensure all mplayer processes have been cleaned up
-mplayer.stop()
+if __name__ == '__main__':
+    main()
