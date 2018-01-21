@@ -591,11 +591,7 @@ def main():
 
     # create the various windows
     fontSmall = pygame.font.Font('freesansbold.ttf', 12)
-    mainWindow = Window(window_width=WINDOWWIDTH,
-                        window_height=WINDOWHEIGHT,
-                        window_frame=pygame.NOFRAME,
-                        font=fontSmall,
-                        bg_color=ColorPicker.BLACK)
+
     db_Window = dbWindow(window_width=WINDOWWIDTH,
                          window_height=200,
                          font=fontSmall,
@@ -615,8 +611,8 @@ def main():
                       'optional_args': ['-ao', 'alsa']
                      }
     station = StationInfo(**station_kwargs)
-    mplayer = StreamPlayer(station)
-    mplayer.play(**mplayer_kwargs)
+    #mplayer = StreamPlayer(station)
+    #mplayer.play(**mplayer_kwargs)
 
     while True:  # main application loop
 
@@ -624,8 +620,8 @@ def main():
         try:
             try:
                 icecast_serv.refresh()
-                if not mplayer.is_playing():
-                    mplayer.play(**mplayer_kwargs)
+                #if not mplayer.is_playing():
+                #    mplayer.play(**mplayer_kwargs)
             except:
                 continue
 
@@ -646,7 +642,7 @@ def main():
         except BaseException as e:
             print(e)
             if isinstance(e, SystemExit):
-                mplayer.stop()
+                #mplayer.stop()
                 break
             # on occasion pyaudio will receieve an input overrun and this requires a new
             # pyaudio.PyAudio() object created
@@ -659,13 +655,21 @@ def main():
             vu_meter.open_stream()
 
     # one final stop command to ensure all mplayer processes have been cleaned up
-    mplayer.stop()
+    #mplayer.stop()
 
 
 # GLOBAL CONSTANTS
 WINDOWWIDTH = 480
 WINDOWHEIGHT = 280
 BGCOLOR = ColorPicker.BLACK
+
+# main window is global to all other windows
+#  therefore this needs to be defined globally
+mainWindow = Window(window_width=WINDOWWIDTH,
+                    window_height=WINDOWHEIGHT,
+                    window_frame=pygame.NOFRAME,
+                    font=pygame.font.Font('freesansbold.ttf', 12),
+                    bg_color=ColorPicker.BLACK)
 
 if __name__ == '__main__':
     main()
