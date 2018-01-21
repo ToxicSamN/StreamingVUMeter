@@ -590,10 +590,13 @@ def main():
 
     # create the various windows
     fontSmall = pygame.font.Font('freesansbold.ttf', 12)
-    mainWindow = Window(WINDOWWIDTH, WINDOWHEIGHT, pygame.NOFRAME,
+    mainWindow = Window(window_width=WINDOWWIDTH,
+                        window_height=WINDOWHEIGHT,
+                        window_frame=pygame.NOFRAME,
                         font=fontSmall,
                         bg_color=ColorPicker.BLACK)
-    db_Window = dbWindow(WINDOWWIDTH, 200, pygame.NOFRAME,
+    db_Window = dbWindow(window_width=WINDOWWIDTH,
+                         window_height=200,
                          font=fontSmall,
                          bg_color=ColorPicker.BLACK)
     stats_Window = StatsWindow(name="Stats",
