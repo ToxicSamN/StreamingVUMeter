@@ -9,6 +9,7 @@
  streaming services.
 """
 
+import os
 import sys
 import audioop
 import math
@@ -19,13 +20,14 @@ import threading
 import requests
 import pygame
 import pyaudio
+import argparse
+import logging
+from configparser import ConfigParser, NoOptionError
 from requests.exceptions import ConnectionError
 from pyradio import StationInfo, StreamPlayer
 
-# ToDo: Add arg parser function
+
 # ToDo: Add logging
-# This program can utilize some argument parsers to accept cmdline input as well as
-# being able to pares a config file
 
 # setup code
 pygame.init()
@@ -33,6 +35,53 @@ pygame.mixer.quit()  # stops unwanted audio output on some computers
 
 
 # CLASS DEFINITIONS
+class Args:
+    """
+    Args Class handles the cmdline arguments passed to the code
+    Usage can be stored to a variable or called by Args().<property>
+    """
+    def __init__(self):
+        # Retrieve and set script arguments for use throughout
+        argparser = argparse.ArgumentParser(description="Streaming VU Meter")
+        argparser.add_argument('-debug', '--debug',
+                               required=False, action='store_true',
+                               help='Used for Debug level information')
+        argparser.add_argument('-c', '--config-file',
+                               default='/u01/prd/streaming/cfg/vumeter/vumeter.conf',
+                               required=False, action='store',
+                               help='identifies the config file to be used')
+        cmd_args = argparser.parse_args()
+        self.debug_mode = cmd_args.debug
+        self.config_file = cmd_args.config_file
+
+        conparser = ConfigParser()
+        conparser.read(self.config_file)
+
+        #  [logging]  #
+        self.logdir = conparser.get('logging', 'LogDir', fallback='/var/log')
+        self.log_size = conparser.get('logging', 'LogRotateSizeMB', fallback=2)
+        self.log_keep = conparser.get('logging', 'MaxFilesKeep', fallback=8)
+        # A hidden option in the config file section [logging] is Debug=True,
+        # lets check for that
+        try:
+            debug_check = conparser.get('logging', 'Debug', fallback='False')
+            if debug_check == 'True':
+                self.debug_mode = True
+        except NoOptionError:
+            pass
+
+        #  [icecast]  #
+        self.stream_name = conparser.get('icecast', 'streamName')
+        self.mountpoint = conparser.get('icecast', 'mountPoint')
+        self.icecast_server = conparser.get('icecast', 'server', fallback='127.0.0.1')
+        self.port = conparser.get('icecast', 'port', fallback='8000')
+        self.icecast_user = conparser.get('icecast', 'user', fallback='admin')
+        self.__clear_password = conparser.get('icecast', 'pswd', fallback='hackme')
+
+    def get_pwd(self):
+        return self.__clear_password
+
+
 class ColorPicker:
     """ Used for pygame coloring to make it easier to pick a color by name instead of color code"""
     WHITE = (255, 255, 255)
@@ -366,7 +415,7 @@ class IcecastInfo:
         self.hostname = hostname
         self.port = port
         self.username = username
-        self._password = password
+        self.__password = password
         self.admin_url = "http://{}:{}/admin/stats.xml".format(self.hostname, self.port)
         self.IceStats = None
         self.Mounts = []
@@ -376,7 +425,7 @@ class IcecastInfo:
 
     def run(self):
         try:
-            req = self.request.get(self.admin_url, auth=(self.username, self._password),
+            req = self.request.get(self.admin_url, auth=(self.username, self.__password),
                                    headers=self.headers, timeout=self.http_timeout)
         except ConnectionError as e:
             raise IcecastError(e)
@@ -426,7 +475,7 @@ class IcecastMount:
 
         try:
             self.ListenerStats = ET.fromstring(req.text)
-        except:
+        except BaseException:
             raise IcecastError("Invalid Mount XML.")
 
         # Miscellaneous Information
@@ -463,7 +512,66 @@ class IcecastListener:
         self.IceStats = listener
 
 
+class Logger:
+
+    def __init__(self):
+
+        args = Args()
+        if args.debug_mode:
+            self.log_level = logging.DEBUG
+        else:
+            self.log_level = logging.INFO
+        self.loggers = []
+        self.formatter = logging.Formatter("%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s")
+        self.logfile_size = int(args.log_size) * 1048576  #convert to Bytes
+        self.logfile_keep = args.log_keep
+        self.logdir = args.logdir
+        self.logfile = os.path.join(args.logdir, 'vumeter.log')
+        self.err_logfile = os.path.join(args.logdir, 'vumeter_err.log')
+
+    def get(self, name):
+        if self.loggers.get(name):
+            return self.loggers.get(name)
+        else:
+            return self._create_logger(name)
+
+    def _create_logger(self, name):
+
+        logger = logging.getLogger(name)
+        logger.setLevel(self.log_level)
+
+        debug_handler = logging.StreamHandler(stream=sys.stdout)
+        debug_handler.setLevel(logging.DEBUG)
+        debug_handler.setFormatter(self.formatter)
+
+        log_filehandler = logging.handlers.RotatingFileHandler(self.logfile,
+                                                               mode='a',
+                                                               maxBytes=int(self.logfile_size),
+                                                               backupCount=int(self.logfile_keep),
+                                                               encoding='utf8',
+                                                               delay=False)
+        log_filehandler.setLevel(logging.INFO)
+        log_filehandler.setFormatter(self.formatter)
+
+        err_filehandler = logging.handlers.RotatingFileHandler(self.err_logfile,
+                                                               mode='a',
+                                                               maxBytes=int(self.logfile_size),
+                                                               backupCount=int(self.logfile_keep),
+                                                               encoding='utf8',
+                                                               delay=False)
+        err_filehandler.setLevel(logging.ERROR)
+        err_filehandler.setFormatter(self.formatter)
+
+        logger.addHandler(log_filehandler)
+        logger.addHandler(err_filehandler)
+
+        self.loggers.update({name: logger})
+
+        return logger
+
+
 def main():
+    args = Args()
     # create the main VUMeter object to be used
     vu_meter = VUMeter(sample_rate=44100,
                        channels=1,
@@ -472,10 +580,13 @@ def main():
                        input_stream=True)
     vu_meter.open_stream()  # Open the stream to start reading from it
 
-    # Define the icecast arguments to be passed to the IcecastInfo class
-    # ToDo: read these values from a config file on the system instead of hardcoded
-    icecast_args = ("localhost", "127.0.0.1", "8000", "admin", "[redacted]")
-    icecast_serv = IcecastInfo(*icecast_args)
+    # Initilize the IcecastInfo server object
+    icecast_serv = IcecastInfo(name='{}-{}'.format(args.icecast_server, args.mountpoint),
+                               hostname=args.icecast_server,
+                               port=args.port,
+                               username=args.icecast_user,
+                               password=args.get_pwd()
+                               )
 
     # create the various windows
     fontSmall = pygame.font.Font('freesansbold.ttf', 12)
@@ -491,11 +602,10 @@ def main():
                                window_width=WINDOWWIDTH-5,
                                window_height=240)
 
-    # ToDo: read these values from a config file on the system instead of hardcoded
-    station_kwargs = {'name': 'KGRO Broadcast',
-                      'uri': 'http://localhost:8000/kgro'
+    station_kwargs = {'name': args.stream_name,
+                      'url': 'http://{}:{}/{}'.format(args.icecast_server, args.port, args.mountpoint)
                      }
-    # ToDo: read these values from a config file on the system instead of hardcoded
+
     mplayer_kwargs = {'cache': 320,
                       'optional_args': ['-ao', 'alsa']
                      }
