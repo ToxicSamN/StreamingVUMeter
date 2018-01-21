@@ -25,6 +25,7 @@ import logging
 from configparser import ConfigParser, NoOptionError
 from requests.exceptions import ConnectionError
 from pyradio import StationInfo, StreamPlayer
+from pygame.locals import QUIT, KEYUP, K_ESCAPE
 
 
 # ToDo: Add logging
