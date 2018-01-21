@@ -455,6 +455,8 @@ class IcecastInfo:
             # set the flag that the thread is running so that it doesn't run again
             self.updating = True
             threading.Thread(target=self.run(), name='IcecastStats').start()
+    def getpw(self):
+        return self.__password
 
 
 class IcecastMount:
@@ -469,7 +471,7 @@ class IcecastMount:
             server.hostname, server.port,
             self.Name)
         try:
-            req = requests.get(url, auth=(server.username, server._password),
+            req = requests.get(url, auth=(server.username, server.getpw()),
                                headers=server.headers, timeout=server.http_timeout)
         except ConnectionError as e:
             raise IcecastError(e)
