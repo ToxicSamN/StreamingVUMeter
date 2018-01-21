@@ -603,7 +603,8 @@ def main():
                                window_height=240)
 
     station_kwargs = {'name': args.stream_name,
-                      'url': 'http://{}:{}/{}'.format(args.icecast_server, args.port, args.mountpoint)
+                      'uri': 'http://{}:{}/{}'.format(args.icecast_server, args.port,
+                                                      args.mountpoint)
                      }
 
     mplayer_kwargs = {'cache': 320,
