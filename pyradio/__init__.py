@@ -23,7 +23,7 @@ class StreamPlayer:
     def __init__(self, station_info):
         self.station = station_info
         self._is_running = False
-        self.started = None
+        self.started = datetime.now()
         self.process = None
         self.pids = []
         self.pre_play_pids = []
@@ -68,7 +68,7 @@ class StreamPlayer:
         # so we need to kill all mplayer processes that were opened prior to logging pre_play_pids
         for pid in self.pids:
             os.kill(pid, 15)  # SIGTERM = 16
-        self.started = None
+        self.started = datetime.now()  # reset the time stamp
         self._is_running = self.is_playing()
 
     def is_playing(self):
