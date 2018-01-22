@@ -611,6 +611,7 @@ def main():
 
     mplayer_kwargs = {'cache': 320,
                       'optional_args': ['-ao', 'alsa']
+                      #'optional_args': ['-o', 'alsa', '-a', '0:1']
                      }
     station = StationInfo(**station_kwargs)
     mplayer = StreamPlayer(station)
@@ -644,7 +645,7 @@ def main():
         except BaseException as e:
             print(e)
             if isinstance(e, SystemExit):
-                mplayer.stop()
+                #mplayer.stop()
                 break
             # on occasion pyaudio will receieve an input overrun and this requires a new
             # pyaudio.PyAudio() object created
