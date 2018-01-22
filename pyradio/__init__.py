@@ -29,9 +29,9 @@ class StreamPlayer:
 
     def play(self, cache=4096, optional_args=[]):
 
-        cli_args = ['mpg123']
+        cli_args = ['mpg321']
         cli_args = cli_args + optional_args
-
+        cli_args += ['-a', 'hw:1,1']
         if cache < 32:  # mplayer requires cache>=32
             cache = 32
 
@@ -50,11 +50,11 @@ class StreamPlayer:
 
         # mplayer seems to open 2 processes but subprocess only knows about 1 process. we need to track any PID changes
         #  for mplayer as the delta is the actual process that are being opened by subprocess.
-        self.pre_play_pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mpg123']
+        self.pre_play_pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mpg321']
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self._is_running = self.is_playing()
         time.sleep(2)  # need to sleep for a couple of seconds as it take mplayer 1-2 seconds to spin up the 2nd process
-        self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mpg123' and
+        self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mpg321' and
                      not self.pre_play_pids.__contains__(proc.pid)]
 
     def stop(self):
