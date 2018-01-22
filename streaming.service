@@ -1,0 +1,10 @@
+[Unit]
+Description=Live Audio Streaming Service
+After=streaming.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /u01/prd/python/StreamingVUMeter/streaming_meter.py
+
+[Install]
+WantedBy=multi-user.target
