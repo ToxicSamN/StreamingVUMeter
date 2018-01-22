@@ -614,8 +614,8 @@ def main():
                       'optional_args': ['-o', 'alsa', '-a', '0:1']
                      }
     station = StationInfo(**station_kwargs)
-    #mplayer = StreamPlayer(station)
-    #mplayer.play(**mplayer_kwargs)
+    mplayer = StreamPlayer(station)
+    mplayer.play(**mplayer_kwargs)
 
     while True:  # main application loop
 
@@ -623,8 +623,8 @@ def main():
         try:
             try:
                 icecast_serv.refresh()
-                #if not mplayer.is_playing():
-                #    mplayer.play(**mplayer_kwargs)
+                if not mplayer.is_playing():
+                    mplayer.play(**mplayer_kwargs)
             except:
                 continue
 
@@ -658,7 +658,7 @@ def main():
             vu_meter.open_stream()
 
     # one final stop command to ensure all mplayer processes have been cleaned up
-    #mplayer.stop()
+    mplayer.stop()
 
 
 # GLOBAL CONSTANTS
