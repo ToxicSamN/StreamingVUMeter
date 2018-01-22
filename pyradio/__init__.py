@@ -31,7 +31,7 @@ class StreamPlayer:
 
         cli_args = ['mpg321']
         cli_args = cli_args + optional_args
-        cli_args += ['-a', 'hw:1,1']
+        cli_args += ['-a', 'hw:1,0']
         if cache < 32:  # mplayer requires cache>=32
             cache = 32
 
