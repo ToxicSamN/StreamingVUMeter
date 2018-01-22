@@ -615,7 +615,7 @@ def main():
                      }
     station = StationInfo(**station_kwargs)
     mplayer = StreamPlayer(station)
-    mplayer.play(**mplayer_kwargs)
+    #mplayer.play(**mplayer_kwargs)
 
     while True:  # main application loop
 
@@ -623,8 +623,8 @@ def main():
         try:
             try:
                 icecast_serv.refresh()
-                if not mplayer.is_playing():
-                    mplayer.play(**mplayer_kwargs)
+                #if not mplayer.is_playing():
+                #    mplayer.play(**mplayer_kwargs)
             except:
                 continue
 
