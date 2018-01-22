@@ -611,7 +611,7 @@ def main():
 
     mplayer_kwargs = {'cache': 320,
                       #'optional_args': ['-ao', 'alsa']
-                      'optional_args': ['-o', 'alsa', '-a', '2,0']
+                      'optional_args': ['-o', 'alsa', '-a', '0:1']
                      }
     station = StationInfo(**station_kwargs)
     mplayer = StreamPlayer(station)
