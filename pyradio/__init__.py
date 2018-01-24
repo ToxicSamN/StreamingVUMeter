@@ -54,7 +54,7 @@ class StreamPlayer:
         self.pre_play_pids = [proc.pid for proc in psutil.process_iter() if proc.name() ==
                               'mplayer']
         for pid in self.pre_play_pids:
-            os.kill(pid, 15) # kill any previous mplayer pids before starting a new one
+            os.kill(pid, 15)  # kill any previous mplayer pids before starting a new one
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self._is_running = self.is_playing()
