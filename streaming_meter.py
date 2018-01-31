@@ -22,6 +22,7 @@ import pygame
 import pyaudio
 import argparse
 import logging
+from datetime import datetime, timedelta
 from configparser import ConfigParser, NoOptionError
 from requests.exceptions import ConnectionError
 from pyradio import StationInfo, StreamPlayer
@@ -408,7 +409,7 @@ class IcecastInfo:
     """ IcecastInfo uses requests.get to obtan information from the Icecast admin page and
     child mountpoints """
 
-    def __init__(self, name, hostname, port, username, password):
+    def __init__(self, name, hostname, port, username, password, refresh_rate=5):
         self.request = requests.Session()
         self.headers = {"User-agent": "Mozilla/5.0"}
         self.http_timeout = 2.0
@@ -423,6 +424,10 @@ class IcecastInfo:
         self.listeners = None
         self.server_start = None
         self.updating = False
+        # set the refresh time to the current time minus refresh rate so that the refresh can
+        #  happen immediately if needed
+        self.refresh_time = datetime.now() - timedelta(seconds=refresh_rate)
+        self.refresh_rate = refresh_rate
 
     def run(self):
         try:
@@ -448,13 +453,16 @@ class IcecastInfo:
         for mount in self.IceStats.iter('source'):
             self.Mounts.append(IcecastMount(mount, self))
 
+        self.refresh_time = datetime.now()
         self.updating = False
 
     def refresh(self):
-        if not self.updating:
+        time_delta = datetime.now() - self.refresh_time
+        if not self.updating and time_delta.total_seconds() >= self.refresh_rate:
             # set the flag that the thread is running so that it doesn't run again
             self.updating = True
             threading.Thread(target=self.run(), name='IcecastStats').start()
+
     def getpw(self):
         return self.__password
 
