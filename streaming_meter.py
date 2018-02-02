@@ -243,13 +243,13 @@ class StatsWindow:
         """
         self.surf_copy = self.surf.copy()
 
-        if not ics.Mounts:
+        if not ics.Mount:
             # no mount points so lets create a NULL mount point
-            ics.Mounts.append(NullMountpoint())
+            ics.Mount = NullMountpoint()
 
         # define text surfaces
         self.title_surf = self.font.render("{}".format(
-            ics.Mounts[0].ServerDescription),
+            ics.Mount.ServerDescription),
                                            True,
                                            ColorPicker.WHITE,
                                            BGCOLOR)
@@ -261,7 +261,7 @@ class StatsWindow:
                                                  BGCOLOR)
 
         self.streamStart_surf = self.font.render("Stream Service Start:  {}".format(
-            ics.Mounts[0].StreamStart),
+            ics.Mount.StreamStart),
                                                  True,
                                                  ColorPicker.WHITE,
                                                  BGCOLOR)
@@ -273,13 +273,13 @@ class StatsWindow:
                                                      BGCOLOR)
 
         self.peakListener_surf = self.font.render("Peak Listeners:  {}".format(
-            ics.Mounts[0].ListenerPeak),
+            ics.Mount.ListenerPeak),
                                                   True,
                                                   ColorPicker.WHITE,
                                                   BGCOLOR)
 
         self.slowListener_surf = self.font.render("Slow Listeners:  {}".format(
-            ics.Mounts[0].SlowListeners),
+            ics.Mount.SlowListeners),
                                                   True,
                                                   ColorPicker.WHITE,
                                                   BGCOLOR)
@@ -409,7 +409,7 @@ class IcecastInfo:
     """ IcecastInfo uses requests.get to obtan information from the Icecast admin page and
     child mountpoints """
 
-    def __init__(self, name, hostname, port, username, password, refresh_rate=5):
+    def __init__(self, name, hostname, port, mountpoint,  username, password, refresh_rate=5):
         self.request = requests.Session()
         self.headers = {"User-agent": "Mozilla/5.0"}
         self.http_timeout = 2.0
@@ -420,7 +420,8 @@ class IcecastInfo:
         self.__password = password
         self.admin_url = "http://{}:{}/admin/stats.xml".format(self.hostname, self.port)
         self.IceStats = None
-        self.Mounts = []
+        self.Mount = None
+        self.mount_point = mountpoint
         self.listeners = None
         self.server_start = None
         self.updating = False
@@ -445,13 +446,14 @@ class IcecastInfo:
             raise IcecastError("Error parsing xml.")
         # need to null out the Mounts attribute so that we don't keep growing the list and
         # run the system out of memory
-        self.Mounts = []
+
         self.listeners = self.IceStats.find('listeners').text
         self.server_start = self.IceStats.find('server_start').text
 
         # Add this server's mounts
         for mount in self.IceStats.iter('source'):
-            self.Mounts.append(IcecastMount(mount, self))
+            if mount.get('mount').lower() == '/{}'.format(self.mount_point.lower()):
+                self.Mount = IcecastMount(mount, self)
 
         self.refresh_time = datetime.now()
         self.updating = False
@@ -472,22 +474,7 @@ class IcecastMount:
 
     def __init__(self, mount, server):
         self.IceStats = mount
-        self.Listeners = []
-        self.Name = self.IceStats.get('mount')
-
-        url = "http://{}:{}/admin/listclients?mount={}".format(
-            server.hostname, server.port,
-            self.Name)
-        try:
-            req = requests.get(url, auth=(server.username, server.getpw()),
-                               headers=server.headers, timeout=server.http_timeout)
-        except ConnectionError as e:
-            raise IcecastError(e)
-
-        try:
-            self.ListenerStats = ET.fromstring(req.text)
-        except BaseException:
-            raise IcecastError("Invalid Mount XML.")
+        self.Name = server.mount_point.upper()
 
         # Miscellaneous Information
         try:
@@ -506,10 +493,6 @@ class IcecastMount:
             self.StreamStart = self.IceStats.find('stream_start').text
         except AttributeError:
             self.StreamStart = None
-
-        # Populate the Listeners list for this mount
-        for listener in self.ListenerStats.iter('listener'):
-            self.Listeners.append(IcecastListener(listener))
 
 
 class IcecastListener:
@@ -594,6 +577,7 @@ def main():
     # Initilize the IcecastInfo server object
     icecast_serv = IcecastInfo(name='{}-{}'.format(args.icecast_server, args.mountpoint),
                                hostname=args.icecast_server,
+                               mountpoint=args.mountpoint,
                                port=args.port,
                                username=args.icecast_user,
                                password=args.get_pwd()
@@ -617,13 +601,13 @@ def main():
                                                       args.mountpoint)
                      }
 
-    mplayer_kwargs = {'cache': 320,
-                      'optional_args': ['-ao', 'alsa']
-                      #'optional_args': ['-o', 'alsa', '-a', '0:1']
-                     }
+    #mplayer_kwargs = {'cache': 320,
+    #                  'optional_args': ['-ao', 'alsa']
+    #                  #'optional_args': ['-o', 'alsa', '-a', '0:1']
+    #                 }
     station = StationInfo(**station_kwargs)
-    mplayer = StreamPlayer(station)
-    mplayer.play(**mplayer_kwargs)
+    #mplayer = StreamPlayer(station)
+    #mplayer.play(**mplayer_kwargs)
 
     while True:  # main application loop
 
@@ -631,8 +615,8 @@ def main():
         try:
             try:
                 icecast_serv.refresh()
-                if not mplayer.is_playing():
-                    mplayer.play(**mplayer_kwargs)
+    #            if not mplayer.is_playing():
+    #                mplayer.play(**mplayer_kwargs)
             except:
                 continue
 
@@ -653,7 +637,7 @@ def main():
         except BaseException as e:
             print(e)
             if isinstance(e, SystemExit):
-                #mplayer.stop()
+    #            mplayer.stop()
                 break
             # on occasion pyaudio will receieve an input overrun and this requires a new
             # pyaudio.PyAudio() object created
@@ -666,7 +650,7 @@ def main():
             vu_meter.open_stream()
 
     # one final stop command to ensure all mplayer processes have been cleaned up
-    mplayer.stop()
+    #mplayer.stop()
 
 
 # GLOBAL CONSTANTS
