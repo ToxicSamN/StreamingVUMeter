@@ -601,13 +601,13 @@ def main():
                                                       args.mountpoint)
                      }
 
-    #mplayer_kwargs = {'cache': 320,
-    #                  'optional_args': ['-ao', 'alsa']
-    #                  #'optional_args': ['-o', 'alsa', '-a', '0:1']
-    #                 }
+    mplayer_kwargs = {'cache': 320,
+                      'optional_args': ['-ao', 'alsa']
+                      #'optional_args': ['-o', 'alsa', '-a', '0:1']
+                     }
     station = StationInfo(**station_kwargs)
-    #mplayer = StreamPlayer(station)
-    #mplayer.play(**mplayer_kwargs)
+    mplayer = StreamPlayer(station)
+    mplayer.play(**mplayer_kwargs)
 
     while True:  # main application loop
 
@@ -615,8 +615,8 @@ def main():
         try:
             try:
                 icecast_serv.refresh()
-    #            if not mplayer.is_playing():
-    #                mplayer.play(**mplayer_kwargs)
+                if not mplayer.is_playing():
+                    mplayer.play(**mplayer_kwargs)
             except:
                 continue
 
@@ -637,7 +637,7 @@ def main():
         except BaseException as e:
             print(e)
             if isinstance(e, SystemExit):
-    #            mplayer.stop()
+                mplayer.stop()
                 break
             # on occasion pyaudio will receieve an input overrun and this requires a new
             # pyaudio.PyAudio() object created
@@ -650,7 +650,7 @@ def main():
             vu_meter.open_stream()
 
     # one final stop command to ensure all mplayer processes have been cleaned up
-    #mplayer.stop()
+    mplayer.stop()
 
 
 # GLOBAL CONSTANTS
