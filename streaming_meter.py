@@ -267,7 +267,7 @@ class StatsWindow:
                                                  BGCOLOR)
 
         self.currentListener_surf = self.font.render("Current Listeners:  {}".format(
-            ics.listeners),
+            ics.Mount.Listeners),
                                                      True,
                                                      ColorPicker.WHITE,
                                                      BGCOLOR)
@@ -422,7 +422,6 @@ class IcecastInfo:
         self.IceStats = None
         self.Mount = None
         self.mount_point = mountpoint
-        self.listeners = None
         self.server_start = None
         self.updating = False
         # set the refresh time to the current time minus refresh rate so that the refresh can
@@ -447,7 +446,6 @@ class IcecastInfo:
         # need to null out the Mounts attribute so that we don't keep growing the list and
         # run the system out of memory
 
-        self.listeners = self.IceStats.find('listeners').text
         self.server_start = self.IceStats.find('server_start').text
 
         # Add this server's mounts
@@ -481,6 +479,10 @@ class IcecastMount:
             self.ListenerPeak = self.IceStats.find('listener_peak').text
         except AttributeError:
             self.ListenerPeak = None
+        try:
+            self.Listeners = self.IceStats.find('listeners').text
+        except AttributeError:
+            self.Listeners = None
         try:
             self.ServerDescription = self.IceStats.find('server_description').text
         except AttributeError:
