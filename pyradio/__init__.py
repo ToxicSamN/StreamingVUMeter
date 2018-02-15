@@ -86,6 +86,7 @@ class StreamPlayer:
             pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                     not self.pre_play_pids.__contains__(proc.pid)]
             if not self.pids == pids:
+                self.pids = pids
                 self.stop()
 
             # the longer mplayer streams the more CPU resources are used. So every hour
