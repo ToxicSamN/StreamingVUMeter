@@ -75,14 +75,26 @@ class StreamPlayer:
         # If the subprocess.Popen.poll() returns a value then the process is not running
         if self.process.poll():
             self._is_running = False
-        else:  # if the subprocess.Popen.poll() returns None then the process is still running
-            # the longer mplayer streams the more CPU resources are used. So every hour (3600
-            # seconds) lets stop mplayer.
-            time_delta = datetime.now() - self.started
-            if time_delta.total_seconds() >= 3600:
+        else:
+            # if the subprocess.Popen.poll() returns None then the process is still running
+
+            # Periodically the stream will be cutoff for a brief moment. However, the way mplayer
+            # is launched via subprocess causes 2 processes to be opened but subprocess only knows
+            # about the 1st pid. Since we track the pids in self.pids then we can see if both pids
+            # are still running. if not then kill the remaining pid and set self._is_running=false
+            pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
+                    not self.pre_play_pids.__contains__(proc.pid)]
+            if not self.pids == pids:
                 self.stop()
+                self._is_running = False
             else:
-                self._is_running = True
+                # the longer mplayer streams the more CPU resources are used. So every hour
+                # (3600 seconds) lets stop mplayer.
+                time_delta = datetime.now() - self.started
+                if time_delta.total_seconds() >= 3600:
+                    self.stop()
+                else:
+                    self._is_running = True
 
         return self._is_running
 
