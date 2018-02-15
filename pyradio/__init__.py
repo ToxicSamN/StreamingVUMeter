@@ -87,10 +87,14 @@ class StreamPlayer:
             pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                     not self.pre_play_pids.__contains__(proc.pid)]
 
+            if not self.pids == pids:
+                time.sleep(2)
+                self.stop()
+
             # the longer mplayer streams the more CPU resources are used. So every hour
             # (3600 seconds) lets stop mplayer.
             time_delta = datetime.now() - self.started
-            if time_delta.total_seconds() >= 3600 or not self.pids == pids:
+            if time_delta.total_seconds() >= 3600:
                 self.stop()
             else:
                 self._is_running = True
