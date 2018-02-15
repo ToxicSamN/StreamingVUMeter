@@ -69,6 +69,7 @@ class StreamPlayer:
         # so we need to kill all mplayer processes that were opened prior to logging pre_play_pids
         for pid in self.pids:
             os.kill(pid, 15)  # SIGTERM = 16
+        self.pids = []
         self.started = datetime.now()  # reset the time stamp
         self._is_running = self.is_playing()
 
@@ -85,14 +86,11 @@ class StreamPlayer:
             # are still running. if not then kill the remaining pid and set self._is_running=false
             pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                     not self.pre_play_pids.__contains__(proc.pid)]
-            if not self.pids == pids:
-                self.pids = pids
-                self.stop()
 
             # the longer mplayer streams the more CPU resources are used. So every hour
             # (3600 seconds) lets stop mplayer.
             time_delta = datetime.now() - self.started
-            if time_delta.total_seconds() >= 60:
+            if time_delta.total_seconds() >= 3600 or not self.pids == pids:
                 self.stop()
             else:
                 self._is_running = True
