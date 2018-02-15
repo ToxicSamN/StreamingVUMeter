@@ -57,11 +57,12 @@ class StreamPlayer:
             os.kill(pid, 15)  # kill any previous mplayer pids before starting a new one
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        self._is_running = self.is_playing()
         self.started = datetime.now()
         time.sleep(2)  # need to sleep for a couple of seconds as it take mplayer 1-2 seconds to spin up the 2nd process
         self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                      not self.pre_play_pids.__contains__(proc.pid)]
+        self._is_running = self.is_playing()
+
 
     def stop(self):
         # subprocess.kill() will kill the process that subprocess is aware of, however, mplayer opens 2 processes
@@ -86,15 +87,14 @@ class StreamPlayer:
                     not self.pre_play_pids.__contains__(proc.pid)]
             if not self.pids == pids:
                 self.stop()
-                self._is_running = False
+
+            # the longer mplayer streams the more CPU resources are used. So every hour
+            # (3600 seconds) lets stop mplayer.
+            time_delta = datetime.now() - self.started
+            if time_delta.total_seconds() >= 3600:
+                self.stop()
             else:
-                # the longer mplayer streams the more CPU resources are used. So every hour
-                # (3600 seconds) lets stop mplayer.
-                time_delta = datetime.now() - self.started
-                if time_delta.total_seconds() >= 3600:
-                    self.stop()
-                else:
-                    self._is_running = True
+                self._is_running = True
 
         return self._is_running
 
