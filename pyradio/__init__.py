@@ -57,11 +57,11 @@ class StreamPlayer:
             os.kill(pid, 15)  # kill any previous mplayer pids before starting a new one
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self._is_running = self.is_playing()
         self.started = datetime.now()
         time.sleep(2)  # need to sleep for a couple of seconds as it take mplayer 1-2 seconds to spin up the 2nd process
         self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                      not self.pre_play_pids.__contains__(proc.pid)]
-        self._is_running = self.is_playing()
 
 
     def stop(self):
