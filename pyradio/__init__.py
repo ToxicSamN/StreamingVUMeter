@@ -89,8 +89,9 @@ class StreamPlayer:
 
             # the longer mplayer streams the more CPU resources are used. So every hour
             # (3600 seconds) lets stop mplayer.
-            time_delta = datetime.now() - self.started
-            if datetime.now().minute == 30 or datetime.now().minute == 0:
+            ntime = datetime.now()
+            time_delta = ntime - self.started
+            if (ntime.minute == 30 and ntime.second == 5) or (ntime.minute == 0 and ntime.second == 5):
                 self.stop()
             else:
                 self._is_running = True
