@@ -53,8 +53,6 @@ class StreamPlayer:
         #  for mplayer as the delta is the actual process that are being opened by subprocess.
         self.pre_play_pids = [proc.pid for proc in psutil.process_iter() if proc.name() ==
                               'mplayer']
-        for pid in self.pre_play_pids:
-            os.kill(pid, 15)  # kill any previous mplayer pids before starting a new one
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.started = datetime.now()
@@ -67,11 +65,13 @@ class StreamPlayer:
     def stop(self):
         # subprocess.kill() will kill the process that subprocess is aware of, however, mplayer opens 2 processes
         # so we need to kill all mplayer processes that were opened prior to logging pre_play_pids
-        for pid in self.pids:
+        pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
+                not self.pre_play_pids.__contains__(proc.pid)]
+        for pid in pids:
             os.kill(pid, 15)  # SIGTERM = 16
         self.pids = []
         self.started = datetime.now()  # reset the time stamp
-        self._is_running = self.is_playing()
+        self._is_running = False
 
     def is_playing(self):
         # If the subprocess.Popen.poll() returns a value then the process is not running
