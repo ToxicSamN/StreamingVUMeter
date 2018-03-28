@@ -55,11 +55,11 @@ class StreamPlayer:
                               'mplayer']
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self._is_running = self.is_playing()
         self.started = datetime.now()
         time.sleep(2)  # need to sleep for a couple of seconds as it take mplayer 1-2 seconds to spin up the 2nd process
         self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                      not self.pre_play_pids.__contains__(proc.pid)]
-        self._is_running = self.is_playing()
 
 
     def stop(self):
@@ -89,8 +89,9 @@ class StreamPlayer:
 
             # the longer mplayer streams the more CPU resources are used. So every hour
             # (3600 seconds) lets stop mplayer.
-            time_delta = datetime.now() - self.started
-            if time_delta.total_seconds() >= 3600 or not self.pids == pids:
+            ntime = datetime.now()
+            time_delta = ntime - self.started
+            if (ntime.minute == 30 and ntime.second == 5) or (ntime.minute == 0 and ntime.second == 5):
                 self.stop()
             else:
                 self._is_running = True
