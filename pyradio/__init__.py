@@ -4,6 +4,7 @@ import time
 import os
 from datetime import datetime
 
+
 class StationInfo:
     """
     Station Information
@@ -49,22 +50,25 @@ class StreamPlayer:
             self.pids = []
             time.sleep(1)  # give it time to clear the processes
 
-        # mplayer seems to open 2 processes but subprocess only knows about 1 process. we need to track any PID changes
-        #  for mplayer as the delta is the actual process that are being opened by subprocess.
+        # mplayer seems to open 2 processes but subprocess only knows about 1 process. we
+        # need to track any PID changes for mplayer as the delta is the actual process that are
+        # being opened by subprocess.
         self.pre_play_pids = [proc.pid for proc in psutil.process_iter() if proc.name() ==
                               'mplayer']
 
         self.process = subprocess.Popen(cli_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self._is_running = self.is_playing()
         self.started = datetime.now()
-        time.sleep(2)  # need to sleep for a couple of seconds as it take mplayer 1-2 seconds to spin up the 2nd process
+        # need to sleep for a couple of seconds as it take mplayer 1-2 seconds
+        # to spin up the 2nd process
+        time.sleep(2)
         self.pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                      not self.pre_play_pids.__contains__(proc.pid)]
 
-
     def stop(self):
-        # subprocess.kill() will kill the process that subprocess is aware of, however, mplayer opens 2 processes
-        # so we need to kill all mplayer processes that were opened prior to logging pre_play_pids
+        # subprocess.kill() will kill the process that subprocess is aware of, however,
+        # mplayer opens 2 processes so we need to kill all mplayer processes that were
+        # opened prior to logging pre_play_pids
         pids = [proc.pid for proc in psutil.process_iter() if proc.name() == 'mplayer' and
                 not self.pre_play_pids.__contains__(proc.pid)]
         for pid in pids:

@@ -600,7 +600,7 @@ def main():
 
     station_kwargs = {'name': args.stream_name,
                       'uri': 'http://{}:{}/{}'.format(args.icecast_server, args.port,
-                                                      args.mountpoint)
+                                                      "vumeter")
                      }
 
     mplayer_kwargs = {'cache': 320,
