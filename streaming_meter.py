@@ -1,4 +1,5 @@
 #!/usr/bin/python
+version = "2.1.0"
 """
  Streaming Meter
  Author: Sammy Shuck
@@ -283,6 +284,10 @@ class StatsWindow:
                                                   True,
                                                   ColorPicker.WHITE,
                                                   BGCOLOR)
+        self.version_surf = self.font.render("Version:  {}".format(version),
+                                             True,
+                                             ColorPicker.WHITE,
+                                             BGCOLOR)
 
         # define text locations and blit
         self._text_display_queue(self.title_surf, xpos=0, ypos=0)
@@ -291,6 +296,7 @@ class StatsWindow:
         self._text_display_queue(self.currentListener_surf, xpos=0, ypos=70)
         self._text_display_queue(self.peakListener_surf, xpos=200, ypos=70)
         self._text_display_queue(self.slowListener_surf, xpos=0, ypos=90)
+        self._text_display_queue(self.version_surf, xpos=0, ypos=120)
 
         mainWindow.screen.blit(self.surf_copy, (self.x_position, self.y_position))
 
