@@ -38,7 +38,7 @@ class StreamPlayer:
             cache = 32
 
         cli_args += ['-cache', str(cache)]
-        cli_args.append(self.station.stream_uri)
+        cli_args.append("127.0.0.1")
 
         if self.pids:
             # kill all mplayer processes that were created by this instance if they exist
