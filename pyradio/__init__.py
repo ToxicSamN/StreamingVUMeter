@@ -9,10 +9,10 @@ class StationInfo:
     """
     Station Information
     """
-    def __init__(self, name, uri):
+    def __init__(self, name, uri, vumeter_uri):
         self.name = name
         self.stream_uri = uri
-        self.vumeter_uri = "127.0.0.1"
+        self.vumeter_uri = vumeter_uri
 
     def get_station(self):
         return "{} : {}".format(self.name, self.stream_uri)
