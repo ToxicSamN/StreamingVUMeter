@@ -1,5 +1,5 @@
 #!/usr/bin/python
-version = "2.1.0"
+version = "2.1.1"
 """
  Streaming Meter
  Author: Sammy Shuck
@@ -606,7 +606,7 @@ def main():
 
     station_kwargs = {'name': args.stream_name,
                       'uri': 'http://{}:{}/{}'.format(args.icecast_server, args.port,
-                                                      "vumeter")
+                                                      args.mountpoint)
                      }
 
     mplayer_kwargs = {'cache': 320,

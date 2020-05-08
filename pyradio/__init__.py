@@ -12,9 +12,13 @@ class StationInfo:
     def __init__(self, name, uri):
         self.name = name
         self.stream_uri = uri
+        self.vumeter_uri = "127.0.0.1"
 
     def get_station(self):
         return "{} : {}".format(self.name, self.stream_uri)
+
+    def get_vustation(self):
+        return "{} : {}".format(self.name, self.vumeter_uri)
 
 
 class StreamPlayer:
@@ -38,7 +42,7 @@ class StreamPlayer:
             cache = 32
 
         cli_args += ['-cache', str(cache)]
-        cli_args.append("127.0.0.1")
+        cli_args.append(self.station.vumeter_uri)
 
         if self.pids:
             # kill all mplayer processes that were created by this instance if they exist
